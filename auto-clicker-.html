@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>手机连点器</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2c3e50">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👆</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👆</text></svg>">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="连点助手">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f2f5;
+      color: #333;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 30px;
+    }
+    
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 30px;
+    }
+    
+    .form-section {
+      margin-bottom: 30px;
+    }
+    
+    h2 {
+      color: #34495e;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #e9ecef;
+      padding-bottom: 10px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #495057;
+    }
+    
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    
+    button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+    
+    .start-button {
+      background: #28a745;
+      color: white;
+    }
+    
+    .start-button:hover {
+      background: #218838;
+    }
+    
+    .stop-button {
+      background: #dc3545;
+      color: white;
+    }
+    
+    .stop-button:hover {
+      background: #c82333;
+    }
+    
+    .schedule-button {
+      background: #17a2b8;
+      color: white;
+    }
+    
+    .schedule-button:hover {
+      background: #138496;
+    }
+    
+    .cancel-button {
+      background: #6c757d;
+      color: white;
+    }
+    
+    .cancel-button:hover {
+      background: #5a6268;
+    }
+    
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .status-text {
+      margin: 10px 0;
+      color: #007bff;
+      font-weight: bold;
+      text-align: center;
+    }
+    
+    hr {
+      margin: 30px 0;
+      border: 1px solid #e9ecef;
+    }
+    
+    @media (max-width: 768px) {
+      .button-group {
+        flex-direction: column;
+      }
+      
+      .container {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>手机连点器</h1>
+    
+    <div class="form-section">
+      <h2>自动连点设置</h2>
+      <div class="form-group">
+        <label for="clickInterval">点击间隔 (毫秒)</label>
+        <input type="number" id="clickInterval" min="10" value="100">
+      </div>
+      <div class="form-group">
+        <label for="clickCount">点击次数</label>
+        <input type="number" id="clickCount" min="1" value="10">
+      </div>
+      <div class="form-group">
+        <label>
+          <input type="radio" name="positionMode" value="fixed" checked> 固定位置
+        </label>
+        <label style="margin-left: 20px;">
+          <input type="radio" name="positionMode" value="custom"> 自定义位置序列
+        </label>
+        <label style="margin-left: 20px;">
+          <input type="radio" name="positionMode" value="image"> 图片查找点击
+        </label>
+        <label style="margin-left: 20px;">
+          <input type="radio" name="positionMode" value="swipe"> 自动滑动查找
+        </label>
+      </div>
+      
+      <!-- 固定位置设置 -->
+      <div id="fixedPositionSection" class="form-group">
+        <div class="form-group">
+          <label for="clickX">点击位置 X</label>
+          <input type="number" id="clickX" value="0">
+        </div>
+        <div class="form-group">
+          <label for="clickY">点击位置 Y</label>
+          <input type="number" id="clickY" value="0">
+        </div>
+      </div>
+      
+      <!-- 自定义位置序列设置 -->
+      <div id="customPositionSection" class="form-group" style="display: none;">
+        <div class="form-group">
+          <label>添加位置</label>
+          <div style="display: flex; gap: 10px;">
+            <input type="number" id="addX" placeholder="X" value="0">
+            <input type="number" id="addY" placeholder="Y" value="0">
+            <input type="number" id="addDelay" placeholder="延迟(ms)" value="100">
+            <button type="button" id="addPosition" style="flex: 0 0 auto; padding: 0 20px;">添加</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>位置列表</label>
+          <div id="positionList" style="border: 1px solid #ced4da; border-radius: 4px; padding: 10px; max-height: 200px; overflow-y: auto;">
+            <!-- 位置列表将通过JavaScript动态添加 -->
+          </div>
+        </div>
+      </div>
+      
+      <!-- 图片查找点击设置 -->
+      <div id="imagePositionSection" class="form-group" style="display: none;">
+        <div class="form-group">
+          <label for="imageUpload">上传目标图片</label>
+          <input type="file" id="imageUpload" accept="image/*">
+        </div>
+        <div class="form-group">
+          <label for="imageThreshold">匹配阈值 (0-1)</label>
+          <input type="number" id="imageThreshold" min="0" max="1" step="0.1" value="0.8">
+        </div>
+        <div class="form-group">
+          <label for="searchArea">搜索区域</label>
+          <div style="display: flex; gap: 10px;">
+            <input type="number" id="searchX" placeholder="起始X" value="0">
+            <input type="number" id="searchY" placeholder="起始Y" value="0">
+            <input type="number" id="searchWidth" placeholder="宽度" value="1080">
+            <input type="number" id="searchHeight" placeholder="高度" value="1920">
+          </div>
+        </div>
+      </div>
+      
+      <!-- 自动滑动查找设置 -->
+      <div id="swipePositionSection" class="form-group" style="display: none;">
+        <div class="form-group">
+          <label>滑动参数</label>
+          <div style="display: flex; gap: 10px;">
+            <input type="number" id="swipeStartX" placeholder="起始X" value="540">
+            <input type="number" id="swipeStartY" placeholder="起始Y" value="1500">
+            <input type="number" id="swipeEndX" placeholder="结束X" value="540">
+            <input type="number" id="swipeEndY" placeholder="结束Y" value="500">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="swipeDuration">滑动时长 (毫秒)</label>
+          <input type="number" id="swipeDuration" min="10" value="500">
+        </div>
+        <div class="form-group">
+          <label for="swipeInterval">滑动间隔 (毫秒)</label>
+          <input type="number" id="swipeInterval" min="100" value="1000">
+        </div>
+        <div class="form-group">
+          <label for="maxSwipes">最大滑动次数</label>
+          <input type="number" id="maxSwipes" min="1" value="10">
+        </div>
+      </div>
+      
+      <div class="button-group">
+        <button id="startAutoClick" class="start-button">开始连点</button>
+        <button id="stopAutoClick" class="stop-button" disabled>停止连点</button>
+      </div>
+      <div id="autoClickStatus" class="status-text"></div>
+    </div>
+    
+    <hr>
+    
+    <div class="form-section">
+      <h2>录制操作</h2>
+      <div class="form-group">
+        <label for="recordName">录制名称</label>
+        <input type="text" id="recordName" placeholder="输入录制名称">
+      </div>
+      <div class="button-group">
+        <button id="startRecord" class="start-button">开始录制</button>
+        <button id="stopRecord" class="stop-button" disabled>停止录制</button>
+        <button id="playRecord" class="schedule-button">播放录制</button>
+      </div>
+      <div class="form-group">
+        <label>录制列表</label>
+        <div id="recordList" style="border: 1px solid #ced4da; border-radius: 4px; padding: 10px; max-height: 200px; overflow-y: auto;">
+          <!-- 录制列表将通过JavaScript动态添加 -->
+        </div>
+      </div>
+      <div id="recordStatus" class="status-text"></div>
+    </div>
+    
+    <hr>
+    
+    <div class="form-section">
+      <h2>定时点击设置</h2>
+      <div class="form-group">
+        <label for="scheduledTime">定时时间 (HH:MM:SS)</label>
+        <input type="text" id="scheduledTime" placeholder="例如: 14:30:00">
+      </div>
+      <div class="button-group">
+        <button id="scheduleClick" class="schedule-button">设置定时点击</button>
+        <button id="cancelScheduledClick" class="cancel-button" disabled>取消定时点击</button>
+      </div>
+      <div id="scheduledClickStatus" class="status-text"></div>
+    </div>
+  </div>
+  
+  <script>
+    // 连点功能变量
+    let autoClickEnabled = false;
+    let autoClickTimer = null;
+    let clickCounter = 0;
+    let scheduledClickEnabled = false;
+    let scheduledClickTimer = null;
+    let customPositions = []; // 自定义位置序列
+    let records = []; // 录制操作列表
+    let isRecording = false;
+    let currentRecord = [];
+    let recordStartTime = 0;
+    let targetImage = null;
+    let swipeCounter = 0;
+    
+    // 切换位置模式
+    function togglePositionMode() {
+      const mode = document.querySelector('input[name="positionMode"]:checked').value;
+      document.getElementById('fixedPositionSection').style.display = 'none';
+      document.getElementById('customPositionSection').style.display = 'none';
+      document.getElementById('imagePositionSection').style.display = 'none';
+      document.getElementById('swipePositionSection').style.display = 'none';
+      
+      if (mode === 'fixed') {
+        document.getElementById('fixedPositionSection').style.display = 'block';
+      } else if (mode === 'custom') {
+        document.getElementById('customPositionSection').style.display = 'block';
+      } else if (mode === 'image') {
+        document.getElementById('imagePositionSection').style.display = 'block';
+      } else if (mode === 'swipe') {
+        document.getElementById('swipePositionSection').style.display = 'block';
+      }
+    }
+    
+    // 添加位置到自定义序列
+    function addPosition() {
+      const x = parseInt(document.getElementById('addX').value) || 0;
+      const y = parseInt(document.getElementById('addY').value) || 0;
+      const delay = parseInt(document.getElementById('addDelay').value) || 100;
+      customPositions.push({ x, y, delay });
+      updatePositionList();
+    }
+    
+    // 删除位置
+    function removePosition(index) {
+      customPositions.splice(index, 1);
+      updatePositionList();
+    }
+    
+    // 更新位置列表显示
+    function updatePositionList() {
+      const list = document.getElementById('positionList');
+      list.innerHTML = '';
+      
+      if (customPositions.length === 0) {
+        list.innerHTML = '<p style="color: #666; text-align: center;">暂无位置，请添加</p>';
+        return;
+      }
+      
+      customPositions.forEach((pos, index) => {
+        const item = document.createElement('div');
+        item.style.display = 'flex';
+        item.style.justifyContent = 'space-between';
+        item.style.alignItems = 'center';
+        item.style.padding = '8px';
+        item.style.borderBottom = '1px solid #e9ecef';
+        item.innerHTML = `
+          <span>位置 ${index + 1}: (${pos.x}, ${pos.y}) 延迟: ${pos.delay}ms</span>
+          <button type="button" onclick="removePosition(${index})" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px;">删除</button>
+        `;
+        list.appendChild(item);
+      });
+    }
+    
+    // 模拟点击函数
+    function simulateClick(x, y) {
+      console.log(`模拟点击位置: (${x}, ${y})`);
+      // 实际项目中，这里会调用原生模块执行点击操作
+    }
+    
+    // 模拟滑动函数
+    function simulateSwipe(startX, startY, endX, endY, duration) {
+      console.log(`模拟滑动: (${startX}, ${startY}) → (${endX}, ${endY}) 时长: ${duration}ms`);
+      // 实际项目中，这里会调用原生模块执行滑动操作
+    }
+    
+    // 图片查找函数
+    function findImage() {
+      const threshold = parseFloat(document.getElementById('imageThreshold').value) || 0.8;
+      const searchX = parseInt(document.getElementById('searchX').value) || 0;
+      const searchY = parseInt(document.getElementById('searchY').value) || 0;
+      const searchWidth = parseInt(document.getElementById('searchWidth').value) || 1080;
+      const searchHeight = parseInt(document.getElementById('searchHeight').value) || 1920;
+      
+      console.log(`查找图片，阈值: ${threshold}，搜索区域: (${searchX}, ${searchY}, ${searchWidth}, ${searchHeight})`);
+      
+      // 模拟找到图片
+      const foundX = searchX + Math.floor(Math.random() * searchWidth * 0.8);
+      const foundY = searchY + Math.floor(Math.random() * searchHeight * 0.8);
+      
+      return { found: true, x: foundX, y: foundY };
+    }
+    
+    // 开始连点
+    function startAutoClick() {
+      const interval = parseInt(document.getElementById('clickInterval').value) || 100;
+      const count = parseInt(document.getElementById('clickCount').value) || 10;
+      const mode = document.querySelector('input[name="positionMode"]:checked').value;
+      
+      // 检查模式是否有效
+      if (mode === 'custom' && customPositions.length === 0) {
+        alert('请先添加自定义位置');
+        return;
+      }
+      
+      if (mode === 'image' && !targetImage) {
+        alert('请先上传目标图片');
+        return;
+      }
+      
+      if (autoClickTimer) {
+        clearInterval(autoClickTimer);
+      }
+      
+      clickCounter = 0;
+      swipeCounter = 0;
+      autoClickEnabled = true;
+      
+      document.getElementById('startAutoClick').disabled = true;
+      document.getElementById('stopAutoClick').disabled = false;
+      document.getElementById('autoClickStatus').textContent = '正在连点... 已点击 0 次';
+      
+      if (mode === 'swipe') {
+        // 自动滑动模式
+        const swipeStartX = parseInt(document.getElementById('swipeStartX').value) || 540;
+        const swipeStartY = parseInt(document.getElementById('swipeStartY').value) || 1500;
+        const swipeEndX = parseInt(document.getElementById('swipeEndX').value) || 540;
+        const swipeEndY = parseInt(document.getElementById('swipeEndY').value) || 500;
+        const swipeDuration = parseInt(document.getElementById('swipeDuration').value) || 500;
+        const swipeInterval = parseInt(document.getElementById('swipeInterval').value) || 1000;
+        const maxSwipes = parseInt(document.getElementById('maxSwipes').value) || 10;
+        
+        autoClickTimer = setInterval(() => {
+          swipeCounter++;
+          simulateSwipe(swipeStartX, swipeStartY, swipeEndX, swipeEndY, swipeDuration);
+          document.getElementById('autoClickStatus').textContent = `正在滑动... 已滑动 ${swipeCounter} 次`;
+          
+          if (swipeCounter >= maxSwipes) {
+            clearInterval(autoClickTimer);
+            autoClickEnabled = false;
+            document.getElementById('startAutoClick').disabled = false;
+            document.getElementById('stopAutoClick').disabled = true;
+            document.getElementById('autoClickStatus').textContent = '滑动完成';
+          }
+        }, swipeInterval);
+      } else if (mode === 'image') {
+        // 图片查找点击模式
+        autoClickTimer = setInterval(() => {
+          clickCounter++;
+          const result = findImage();
+          if (result.found) {
+            simulateClick(result.x, result.y);
+            document.getElementById('autoClickStatus').textContent = `正在查找图片... 已点击 ${clickCounter} 次 (位置: ${result.x}, ${result.y})`;
+          } else {
+            document.getElementById('autoClickStatus').textContent = `正在查找图片... 已尝试 ${clickCounter} 次，未找到`;
+          }
+          
+          if (clickCounter >= count) {
+            clearInterval(autoClickTimer);
+            autoClickEnabled = false;
+            document.getElementById('startAutoClick').disabled = false;
+            document.getElementById('stopAutoClick').disabled = true;
+            document.getElementById('autoClickStatus').textContent = '图片查找完成';
+          }
+        }, interval);
+      } else if (mode === 'custom') {
+        // 自定义位置序列模式
+        let posIndex = 0;
+        autoClickTimer = setInterval(() => {
+          if (posIndex >= customPositions.length) {
+            posIndex = 0;
+          }
+          const pos = customPositions[posIndex];
+          simulateClick(pos.x, pos.y);
+          document.getElementById('autoClickStatus').textContent = `正在连点... 已点击 ${clickCounter + 1} 次 (位置: ${pos.x}, ${pos.y})`;
+          
+          posIndex++;
+          clickCounter++;
+          
+          if (clickCounter >= count) {
+            clearInterval(autoClickTimer);
+            autoClickEnabled = false;
+            document.getElementById('startAutoClick').disabled = false;
+            document.getElementById('stopAutoClick').disabled = true;
+            document.getElementById('autoClickStatus').textContent = '连点完成';
+          }
+        }, interval);
+      } else {
+        // 固定位置模式
+        const fixedX = parseInt(document.getElementById('clickX').value) || 0;
+        const fixedY = parseInt(document.getElementById('clickY').value) || 0;
+        
+        autoClickTimer = setInterval(() => {
+          clickCounter++;
+          simulateClick(fixedX, fixedY);
+          document.getElementById('autoClickStatus').textContent = `正在连点... 已点击 ${clickCounter} 次 (位置: ${fixedX}, ${fixedY})`;
+          
+          if (clickCounter >= count) {
+            clearInterval(autoClickTimer);
+            autoClickEnabled = false;
+            document.getElementById('startAutoClick').disabled = false;
+            document.getElementById('stopAutoClick').disabled = true;
+            document.getElementById('autoClickStatus').textContent = '连点完成';
+          }
+        }, interval);
+      }
+    }
+    
+    // 停止连点
+    function stopAutoClick() {
+      if (autoClickTimer) {
+        clearInterval(autoClickTimer);
+        autoClickTimer = null;
+      }
+      autoClickEnabled = false;
+      clickCounter = 0;
+      swipeCounter = 0;
+      document.getElementById('startAutoClick').disabled = false;
+      document.getElementById('stopAutoClick').disabled = true;
+      document.getElementById('autoClickStatus').textContent = '连点已停止';
+    }
+    
+    // 开始录制
+    function startRecord() {
+      const recordName = document.getElementById('recordName').value || `录制 ${records.length + 1}`;
+      currentRecord = [];
+      recordStartTime = Date.now();
+      isRecording = true;
+      
+      document.getElementById('startRecord').disabled = true;
+      document.getElementById('stopRecord').disabled = false;
+      document.getElementById('recordStatus').textContent = '正在录制...';
+      
+      // 监听屏幕点击
+      document.addEventListener('click', recordClick);
+    }
+    
+    // 录制点击
+    function recordClick(e) {
+      if (!isRecording) return;
+      
+      const now = Date.now();
+      const delay = now - recordStartTime;
+      recordStartTime = now;
+      
+      currentRecord.push({
+        type: 'click',
+        x: e.clientX,
+        y: e.clientY,
+        delay: delay
+      });
+      
+      document.getElementById('recordStatus').textContent = `正在录制... 已记录 ${currentRecord.length} 个操作`;
+    }
+    
+    // 停止录制
+    function stopRecord() {
+      isRecording = false;
+      const recordName = document.getElementById('recordName').value || `录制 ${records.length + 1}`;
+      
+      records.push({
+        name: recordName,
+        actions: currentRecord,
+        timestamp: new Date().toLocaleString()
+      });
+      
+      document.removeEventListener('click', recordClick);
+      document.getElementById('startRecord').disabled = false;
+      document.getElementById('stopRecord').disabled = true;
+      document.getElementById('recordStatus').textContent = `录制完成，已保存为 "${recordName}"`;
+      
+      updateRecordList();
+    }
+    
+    // 播放录制
+    function playRecord(recordIndex) {
+      const record = records[recordIndex];
+      if (!record) return;
+      
+      document.getElementById('recordStatus').textContent = `正在播放录制: ${record.name}`;
+      
+      let actionIndex = 0;
+      
+      function playNextAction() {
+        if (actionIndex >= record.actions.length) {
+          document.getElementById('recordStatus').textContent = `录制播放完成: ${record.name}`;
+          return;
+        }
+        
+        const action = record.actions[actionIndex];
+        if (action.type === 'click') {
+          simulateClick(action.x, action.y);
+        }
+        
+        actionIndex++;
+        setTimeout(playNextAction, action.delay);
+      }
+      
+      playNextAction();
+    }
+    
+    // 删除录制
+    function deleteRecord(recordIndex) {
+      records.splice(recordIndex, 1);
+      updateRecordList();
+    }
+    
+    // 更新录制列表
+    function updateRecordList() {
+      const list = document.getElementById('recordList');
+      list.innerHTML = '';
+      
+      if (records.length === 0) {
+        list.innerHTML = '<p style="color: #666; text-align: center;">暂无录制，请开始录制</p>';
+        return;
+      }
+      
+      records.forEach((record, index) => {
+        const item = document.createElement('div');
+        item.style.display = 'flex';
+        item.style.justifyContent = 'space-between';
+        item.style.alignItems = 'center';
+        item.style.padding = '8px';
+        item.style.borderBottom = '1px solid #e9ecef';
+        item.innerHTML = `
+          <div>
+            <strong>${record.name}</strong>
+            <p style="font-size: 12px; color: #666; margin: 2px 0;">${record.timestamp}</p>
+            <p style="font-size: 12px; color: #666; margin: 2px 0;">${record.actions.length} 个操作</p>
+          </div>
+          <div style="display: flex; gap: 5px;">
+            <button type="button" onclick="playRecord(${index})" style="background: #28a745; color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px;">播放</button>
+            <button type="button" onclick="deleteRecord(${index})" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px;">删除</button>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
+    
+    // 设置定时点击
+    function scheduleClick() {
+      const scheduledTime = document.getElementById('scheduledTime').value;
+      const mode = document.querySelector('input[name="positionMode"]:checked').value;
+      
+      if (!scheduledTime) {
+        alert('请设置定时时间');
+        return;
+      }
+      
+      // 检查模式是否有效
+      if (mode === 'custom' && customPositions.length === 0) {
+        alert('请先添加自定义位置');
+        return;
+      }
+      
+      if (mode === 'image' && !targetImage) {
+        alert('请先上传目标图片');
+        return;
+      }
+      
+      const [hours, minutes, seconds] = scheduledTime.split(':').map(Number);
+      const now = new Date();
+      const targetTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, seconds);
+      
+      if (targetTime <= now) {
+        // 如果时间已过，设置为第二天
+        targetTime.setDate(targetTime.getDate() + 1);
+      }
+      
+      const timeUntilClick = targetTime - now;
+      
+      scheduledClickEnabled = true;
+      document.getElementById('scheduleClick').disabled = true;
+      document.getElementById('cancelScheduledClick').disabled = false;
+      document.getElementById('scheduledClickStatus').textContent = `定时点击已设置，将在 ${scheduledTime} 执行`;
+      
+      scheduledClickTimer = setTimeout(() => {
+        if (mode === 'image') {
+          const result = findImage();
+          if (result.found) {
+            simulateClick(result.x, result.y);
+            document.getElementById('scheduledClickStatus').textContent = `定时点击已执行 (图片查找位置: ${result.x}, ${result.y})`;
+            alert(`定时点击已执行 (图片查找位置: ${result.x}, ${result.y})`);
+          } else {
+            document.getElementById('scheduledClickStatus').textContent = '定时点击执行失败: 未找到图片';
+            alert('定时点击执行失败: 未找到图片');
+          }
+        } else if (mode === 'custom' && customPositions.length > 0) {
+          // 随机选择一个自定义位置
+          const posIndex = Math.floor(Math.random() * customPositions.length);
+          const pos = customPositions[posIndex];
+          simulateClick(pos.x, pos.y);
+          document.getElementById('scheduledClickStatus').textContent = `定时点击已执行 (位置: ${pos.x}, ${pos.y})`;
+          alert(`定时点击已执行 (位置: ${pos.x}, ${pos.y})`);
+        } else {
+          // 固定位置
+          const fixedX = parseInt(document.getElementById('clickX').value) || 0;
+          const fixedY = parseInt(document.getElementById('clickY').value) || 0;
+          simulateClick(fixedX, fixedY);
+          document.getElementById('scheduledClickStatus').textContent = `定时点击已执行 (位置: ${fixedX}, ${fixedY})`;
+          alert(`定时点击已执行 (位置: ${fixedX}, ${fixedY})`);
+        }
+        
+        scheduledClickEnabled = false;
+        scheduledClickTimer = null;
+        document.getElementById('scheduleClick').disabled = false;
+        document.getElementById('cancelScheduledClick').disabled = true;
+      }, timeUntilClick);
+    }
+    
+    // 取消定时点击
+    function cancelScheduledClick() {
+      if (scheduledClickTimer) {
+        clearTimeout(scheduledClickTimer);
+        scheduledClickTimer = null;
+      }
+      scheduledClickEnabled = false;
+      document.getElementById('scheduleClick').disabled = false;
+      document.getElementById('cancelScheduledClick').disabled = true;
+      document.getElementById('scheduledClickStatus').textContent = '定时点击已取消';
+    }
+    
+    // 图片上传处理
+    function handleImageUpload(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          targetImage = e.target.result;
+          alert('图片上传成功');
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+    
+    // 绑定事件
+    document.getElementById('startAutoClick').addEventListener('click', startAutoClick);
+    document.getElementById('stopAutoClick').addEventListener('click', stopAutoClick);
+    document.getElementById('scheduleClick').addEventListener('click', scheduleClick);
+    document.getElementById('cancelScheduledClick').addEventListener('click', cancelScheduledClick);
+    document.getElementById('startRecord').addEventListener('click', startRecord);
+    document.getElementById('stopRecord').addEventListener('click', stopRecord);
+    document.getElementById('imageUpload').addEventListener('change', handleImageUpload);
+    
+    // 位置模式切换事件
+    const radioButtons = document.querySelectorAll('input[name="positionMode"]');
+    radioButtons.forEach(radio => {
+      radio.addEventListener('change', togglePositionMode);
+    });
+    
+    // 添加位置按钮事件
+    document.getElementById('addPosition').addEventListener('click', addPosition);
+    
+    // 初始化
+    updatePositionList();
+    updateRecordList();
+    
+    // 注册Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js')
+          .then((registration) => {
+            console.log('Service Worker registered with scope:', registration.scope);
+          })
+          .catch((error) => {
+            console.error('Service Worker registration failed:', error);
+          });
+      });
+    }
+  </script>
+</body>
+</html>
